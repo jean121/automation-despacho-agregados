@@ -30,9 +30,9 @@ from pywinauto.keyboard import send_keys
 
 # ============== CONFIGURACIÓN ==============
 GUIA_PREFIJO_FIJO = "195"     # lo estableces manualmente en el campo 'Guía (prefijo)' antes de ejecutar
-GUIA_INICIO = 184514
+GUIA_INICIO = 184564
           # ej.: 184241 -> se convertirá en "0184241"
-GUIA_FIN    = 184515
+GUIA_FIN    = 184568
 
 
 # Tabs según tu mapeo (AJUSTADO A 15)
@@ -296,8 +296,8 @@ def print_3_copies(win):
     # Escribir número de copias y confirmar
     send_keys("3")
     time.sleep(0.08)
-    #send_keys("{ENTER}")
-    send_keys("{ESC}")  # Cerrar diálogo para evitar IMPRIMIR en pruebas
+    send_keys("{ENTER}")
+    #send_keys("{ESC}")  # Cerrar diálogo para evitar IMPRIMIR en pruebas
     time.sleep(0.4)
     return True
 
