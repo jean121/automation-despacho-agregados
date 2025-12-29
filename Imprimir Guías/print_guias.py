@@ -24,16 +24,14 @@ import os
 import time
 import ctypes
 from datetime import datetime
-import pyautogui, re
+import pyautogui
 from pywinauto import Application, Desktop
 from pywinauto.keyboard import send_keys
 
 # ============== CONFIGURACIÓN ==============
 GUIA_PREFIJO_FIJO = "195"     # lo estableces manualmente en el campo 'Guía (prefijo)' antes de ejecutar
-GUIA_INICIO = 184514
-          # ej.: 184241 -> se convertirá en "0184241"
-GUIA_FIN    = 184515
-
+GUIA_INICIO = 184241          # ej.: 184241 -> se convertirá en "0184241"
+GUIA_FIN    = 184243
 
 # Tabs según tu mapeo (AJUSTADO A 15)
 TABS_PREFIJO_A_7D = 15        # de 'Guía (prefijo)' -> 'Guía (7 dígitos)'
@@ -125,7 +123,7 @@ def focus_window_hard_enter(win, retries=4, pause=0.2):
     return False
 
 # ============== Envío de teclas ==============
-DEBUG_DELAY = 0.01  # sube/baja para observar cada paso más claro
+DEBUG_DELAY = 0.20  # sube/baja para observar cada paso más claro
 
 def ensure_sdc_and_send_keys_hard(win, keys: str, desc: str = ""):
     """
@@ -166,7 +164,7 @@ def click_obtener_pdf_por_imagen(win, img_path):
         raise FileNotFoundError(f"No existe la imagen: {img_path}")
 
     # Asegurar foco con ENTER antes de buscar imagen
-    #focus_window_hard_enter(win)
+    focus_window_hard_enter(win)
 
     region = get_window_region(win)
     conf = CONFIDENCE_START
@@ -190,7 +188,7 @@ def click_obtener_pdf_por_imagen(win, img_path):
         conf = round(conf - CONFIDENCE_STEP, 2)
 
     # Último intento en toda la pantalla
-    """ try:
+    try:
         box = pyautogui.locateOnScreen(img_path, confidence=CONFIDENCE_MIN, grayscale=GRAYSCALE_SEARCH)
     except Exception:
         box = None
@@ -203,7 +201,7 @@ def click_obtener_pdf_por_imagen(win, img_path):
         return True
 
     save_debug_region(region)
-    return False """
+    return False
 
 # ============== Imprimir 3 copias ==============
 def print_3_copies(win):
@@ -215,78 +213,18 @@ def print_3_copies(win):
     - ENTER
     """
     # Asegurar foco initial en SDC para que Ctrl+P se dirija correctamente
-    """ try:
+    try:
         focus_window_hard_enter(win)
     except Exception:
-        pass """
+        pass
 
-    # Abrir diálogo de imprimir con reintentos hasta aparecer (timeout total configurable)
-    PRINT_DIALOG_MAX_WAIT = 15.0      # tiempo máximo total para reintentos (seg)
-    PRINT_DIALOG_TRY_INTERVAL = 0.5   # espera entre reintentos de enviar Ctrl+P (seg)
-    INNER_CHECK_TIMEOUT = 2.5         # espera tras cada Ctrl+P para que aparezca el diálogo (seg)
-
-    t0 = time.time()
-    dlg_ok = False
-
-    print(f"[INFO] Espera de {INNER_CHECK_TIMEOUT: .2f}s antes de intentar imprimir...")
-    time.sleep(INNER_CHECK_TIMEOUT)
-    while time.time() - t0 < PRINT_DIALOG_MAX_WAIT:
-        try:
-            print(f"[INFO] Intento")
-            send_keys("^p")  # Ctrl+P
-        except Exception:
-            pass
-
-        # Esperar breve y comprobar si apareció el diálogo (prueba UIA y Win32, títulos ES/EN)
-        t_inner = time.time()
-        while time.time() - t_inner < INNER_CHECK_TIMEOUT:
-            dlg_found = False
-            for backend in ("uia", "win32"):
-                try:
-                    d = Desktop(backend=backend)
-                    for w in d.windows():
-                        try:
-                            title = (w.window_text() or "")
-                            if not re.search(r"(?i)\b(imprimir|print)\b", title):
-                                continue
-                            # comprobar tamaño mínimo plausible (evita coincidencias con elementos pequeños)
-                            try:
-                                rect = w.rectangle()
-                                wwidth = rect.right - rect.left
-                                wheight = rect.bottom - rect.top
-                                if wwidth < 80 or wheight < 30:
-                                    continue
-                            except Exception:
-                                pass
-                            # comprobar visibilidad si disponible
-                            try:
-                                if hasattr(w, "is_visible") and not w.is_visible():
-                                    continue
-                            except Exception:
-                                pass
-                            dlg_found = True
-                            break
-                        except Exception:
-                            continue
-                    if dlg_found:
-                        break
-                except Exception:
-                    continue
-            if dlg_found:
-                print(f"[INFO] Apareció el diálogo de impresión tras reintentos")
-                dlg_ok = True
-                break
-            time.sleep(0.2)
-
-        if dlg_ok:
-            break
-
-        # Espera antes de reintentar enviar Ctrl+P
-        time.sleep(PRINT_DIALOG_TRY_INTERVAL)
-
-    if not dlg_ok:
-        print("[WARN] No apareció el diálogo de impresión tras reintentos — el PDF puede no haber cargado.")
+    # Abrir diálogo de imprimir
+    try:
+        send_keys("^p")  # Ctrl+P
+    except Exception:
         return False
+
+    time.sleep(0.5)
 
     # Navegar en el diálogo con TABs
     for _ in range(4):
@@ -296,8 +234,7 @@ def print_3_copies(win):
     # Escribir número de copias y confirmar
     send_keys("3")
     time.sleep(0.08)
-    #send_keys("{ENTER}")
-    send_keys("{ESC}")  # Cerrar diálogo para evitar IMPRIMIR en pruebas
+    send_keys("{ENTER}")
     time.sleep(0.4)
     return True
 
@@ -313,9 +250,9 @@ def return_to_sdc(win, timeout=6.0):
     t0 = time.time()
     time.sleep(WAIT_AFTER_PDF_OPEN)
 
-    # 1) Intento directo (no funciona)
-    """ if focus_window_hard_enter(win):
-        return True """    
+    # 1) Intento directo
+    if focus_window_hard_enter(win):
+        return True
 
     # 2) ALT+TAB hasta recuperar (máx 5 intentos)
     for _ in range(5):
@@ -325,18 +262,18 @@ def return_to_sdc(win, timeout=6.0):
             return True
         if time.time() - t0 > timeout:
             break
-    
+
     # 3) ALT+ESC (ciclo rápido de ventanas)
-    """ for _ in range(5):
+    for _ in range(5):
         send_keys("%{ESC}")   # ALT+ESC
         time.sleep(0.25)
         if focus_window_hard_enter(win):
             return True
         if time.time() - t0 > timeout:
-            break """
+            break
 
     # 4) Último intento directo
-    """ return focus_window_hard_enter(win) """
+    return focus_window_hard_enter(win)
 
 # ============== FLUJO PRINCIPAL ==============
 def main():
@@ -370,16 +307,15 @@ def main():
             msg = f"No se encontró 'Obtener PDF' (guía {sufijo_7d}). Revisa debug_window_region_*.png y la plantilla."
             print("[WARN]", msg)
             errores.append(msg)
-            print(f"\n[INFO] PASÓ POR:errores.append(msg)")
             continue
 
         # 5) Imprimir 3 copias
-        try:
+        """ try:
             ok_print = print_3_copies(win)
             if not ok_print:
                 print(f"[WARN] Error enviando impresión para guía {sufijo_7d}")
         except Exception as e:
-            print(f"[WARN] Excepción en impresión: {e}")
+            print(f"[WARN] Excepción en impresión: {e}") """
 
         # 6) Retornar de forma robusta a SDC (evitar que los TABs se queden en IE/Edge)
         if not return_to_sdc(win):
