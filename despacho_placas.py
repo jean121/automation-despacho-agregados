@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """
 Automatización de despacho UNICON leyendo placas desde una tabla de Excel.
@@ -18,12 +17,15 @@ import warnings
 from datetime import date
 import ctypes
 from pywinauto.keyboard import send_keys
+import shutil
+import tempfile
+import os
 
 # ====== VARIABLES AJUSTABLES (CAMBIA AQUÍ) ======
 EXCEL_PATH = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Compartido Victor\DESPACHO DE AGREGADOS_YB 2025 2.3.xlsx"  # Cambia a tu ruta real
-TABLE_NAME = "Tabla27170"            # Nombre de la tabla (variable)
-START_ROW_IN_TABLE = 42               # Fila inicial dentro de la tabla (sin contar cabecera)
-END_ROW_IN_TABLE = 45                # Fila final dentro de la tabla (sin contar cabecera)
+TABLE_NAME = "Tabla27178"            # Nombre de la tabla (variable)
+START_ROW_IN_TABLE = 70             # Fila inicial dentro de la tabla (sin contar cabecera)
+END_ROW_IN_TABLE = 71                # Fila final dentro de la tabla (sin contar cabecera)
 TARGET_COLUMN_INDEX = 3              # 3ª columna de la tabla (1 = primera, 2 = segunda, 3 = tercera)
 
 # Ventana remota (referencial, no usada por pyautogui directamente; sirve como documentación)
@@ -33,7 +35,7 @@ WINDOW_TITLE_REMOTO = r"UNICON  - Módulo de ALMACEN - ELMER JEAN PIERRE ALPISTE
 SHIFT_TABS_A_BOTON_NOMBRE = 8       # Cantidad de Shift+Tab para llegar al botón sin nombre
 FILTRO_NOMBRE_TEXTO = "alp"         # Texto del filtro para seleccionar "Alpiste Ramírez"
 KEY_CONTINUAR = "f8"                 # Tecla que el usuario presionará para continuar tras seleccionar conductor
-DELAY_CORTO = 0.05                   # Pequeñas esperas entre teclas
+DELAY_CORTO = 0.01                    # Pequeñas esperas entre teclas
 DELAY_MEDIO = 0.25
 DELAY_LARGO = 0.6
 
@@ -74,15 +76,31 @@ except Exception:
 
 
 # ====== UTILIDADES EXCEL ======
+def crear_copia_temporal(xlsx_path: str) -> str:
+    """Crea una copia temporal del archivo xlsx y devuelve la ruta (delete=False)."""
+    fd, tmp_path = tempfile.mkstemp(suffix=".xlsx")
+    os.close(fd)
+    shutil.copy2(xlsx_path, tmp_path)
+    return tmp_path
+
+
 def encontrar_tabla_en_libro(xlsx_path: str, table_name: str):
     """
-    Busca la tabla por nombre en todas las hojas del libro y devuelve (ws, ref, min_col, min_row, max_col, max_row).
-    'ref' incluye cabeceras. Datos comienzan en min_row + 1.
+    Busca la tabla por nombre en todas las hojas del libro y devuelve
+    (wb, ws, ref, min_col, min_row, max_col, max_row, temp_path).
+    temp_path es None si no se creó copia temporal, o la ruta al temporal si sí.
     """
+    temp_path = None
     # Suprimir warnings conocidos de openpyxl sobre Data Validation durante la carga
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Data Validation extension is not supported")
-        wb = openpyxl.load_workbook(xlsx_path, data_only=True)
+        try:
+            wb = openpyxl.load_workbook(xlsx_path, data_only=True)
+        except (PermissionError, OSError) as e:
+            print(f"[WARN] No se pudo abrir '{xlsx_path}' directamente ({e}). Creando copia temporal...")
+            temp_path = crear_copia_temporal(xlsx_path)
+            print(f"[INFO] Copia temporal creada")
+            wb = openpyxl.load_workbook(temp_path, data_only=True)
 
     # Intentar seleccionar directamente la hoja con nombre "D.M" o "DD.MM" (p.ej. 29.12)
     today = date.today()
@@ -97,26 +115,35 @@ def encontrar_tabla_en_libro(xlsx_path: str, table_name: str):
         ws_list = wb.worksheets
 
     for ws in ws_list:
-        # openpyxl mantiene tablas en ws._tables (dict) o ws.tables (dict) según versión
         tablas = {}
         if hasattr(ws, "_tables") and isinstance(ws._tables, dict):
             tablas.update(ws._tables)
         if hasattr(ws, "tables"):
-            # En algunas versiones es dict de nombre->Table
             try:
                 tablas.update(ws.tables)
             except Exception:
                 pass
 
         for nombre, tbl in tablas.items():
-            # Compatibilidad: algunos usan tbl.name, otros tbl.displayName
             nombre_tbl = getattr(tbl, "name", None) or getattr(tbl, "displayName", None) or nombre
             if nombre_tbl == table_name:
                 ref = getattr(tbl, "ref", None)
                 if not ref:
+                    # Ensure we still return temp_path so caller can cleanup
                     raise ValueError(f"La tabla '{table_name}' no tiene rango definido (ref).")
                 min_col, min_row, max_col, max_row = range_boundaries(ref)
-                return wb, ws, ref, min_col, min_row, max_col, max_row
+                return wb, ws, ref, min_col, min_row, max_col, max_row, temp_path
+
+    # Si no encontró tabla, cerrar wb y eliminar temp si existe antes de lanzar
+    try:
+        wb.close()
+    except Exception:
+        pass
+    if temp_path:
+        try:
+            os.remove(temp_path)
+        except Exception:
+            pass
 
     raise ValueError(f"No se encontró la tabla '{table_name}' en el libro: {xlsx_path}")
 
@@ -129,7 +156,7 @@ def extraer_placas_desde_tabla(xlsx_path: str,
     """
     Devuelve una lista de placas (strings) desde la columna target de la tabla, considerando filas de datos (sin cabecera).
     """
-    wb, ws, ref, min_col, min_row, max_col, max_row = encontrar_tabla_en_libro(xlsx_path, table_name)
+    wb, ws, ref, min_col, min_row, max_col, max_row, temp_path = encontrar_tabla_en_libro(xlsx_path, table_name)
 
     # Validaciones
     cols_count = max_col - min_col + 1
@@ -163,6 +190,12 @@ def extraer_placas_desde_tabla(xlsx_path: str,
         placas.append(str(val).strip())
 
     wb.close()
+    # Eliminar copia temporal si se creó
+    try:
+        if 'temp_path' in locals() and temp_path:
+            os.remove(temp_path)
+    except Exception:
+        pass
     return placas
 
 
@@ -294,17 +327,104 @@ def go_to_sdc(win, attempts: int = 5, timeout=6.0) -> bool:
         if time.time() - t0 > timeout:
             break
 
+# Tiempo máximo a esperar a que cierre la ventana "Registro de Salidas por Venta - \\Remota"
+DEFAULT_REGISTRO_TIMEOUT = 20.0  # segundos
+POLL_INTERVAL = 0.5
+
+def wait_for_registro_salidas_close(title_substr: str = r"Registro de Salidas por Venta - \\Remota",
+                                    timeout: float = DEFAULT_REGISTRO_TIMEOUT,
+                                    poll_interval: float = POLL_INTERVAL) -> bool:
+    """
+    Espera hasta que no exista una ventana cuyo título contenga `title_substr`.
+    Usa backend 'win32' ya que la ventana sólo es visible con ese backend.
+    Retorna True si desaparece antes del timeout, False si vence el timeout o ocurre un fallo.
+    """
+    try:
+        desktop = Desktop(backend="win32")
+    except Exception:
+        # No podemos usar win32: no bloquear el flujo
+        return True
+
+    t0 = time.time()
+    while True:
+        try:
+            found = any(title_substr.lower() in w.window_text().lower() for w in desktop.windows())
+        except Exception:
+            # En caso de error al listar ventanas, continuar para evitar bloqueo
+            return True
+
+        if not found:
+            return True
+        if time.time() - t0 > timeout:
+            print(f"[WARN] Timeout ({timeout}s) esperando que desaparezca '{title_substr}'")
+            return False
+        time.sleep(poll_interval)
+
+def sdc_active(win, poll_interval: float = 0.25) -> bool:
+    """
+    Bloquea hasta que la ventana `win` del SDC esté en foreground y su título coincida con _match_sdc_title().
+    Retorna True cuando la ventana está activa.
+    """
+    while True:
+        try:
+            # Si el foreground coincide con el handle y el título coincide, consideramos la ventana activa
+            if is_sdc_foreground(win):
+                try:
+                    title = win.window_text()
+                except Exception:
+                    title = ""
+                if _match_sdc_title(title):
+                    return True            
+        except KeyboardInterrupt:
+            raise
+        except Exception:
+            # Ignorar errores temporales y seguir intentando
+            pass
+        time.sleep(poll_interval)
+
 # ====== FLUJO DE DESPACHO EN REMOTO ======
+def wait_for_informacion_window(title_substr: str = r"Información - \\Remota",
+                                timeout: float = 10.0,
+                                poll_interval: float = 0.5) -> bool:
+    """
+    Espera hasta que aparezca una ventana cuyo título contenga `title_substr`.
+    Una vez que aparece, envía SPACE para cerrarla y continuar.
+    Retorna True si la ventana apareció y se cerró, False si vence el timeout.
+    """
+    try:
+        desktop = Desktop(backend="win32")
+    except Exception:
+        print("[WARN] No se pudo usar win32 backend para esperar ventana Información")
+        return False
+
+    t0 = time.time()
+    while True:
+        try:
+            windows = desktop.windows()
+            found = any(title_substr.lower() in w.window_text().lower() for w in windows)
+        except Exception:
+            found = False
+
+        if found:
+            print(f"[INFO] Ventana '{title_substr}' detectada. Enviando SPACE para cerrar...")
+            time.sleep(0.5)  # pequeña pausa para asegurar que la ventana esté lista
+            send_keys("{SPACE}")
+            time.sleep(DELAY_MEDIO)
+            return True
+        
+        if time.time() - t0 > timeout:
+            print(f"[WARN] Timeout ({timeout}s) esperando que aparezca '{title_substr}'")
+            return False
+        
+        time.sleep(poll_interval)
+
+
 def flujo_despacho_para_placa(placa: str):
     """
     Ejecuta la secuencia de teclas en la ventana remota para procesar una placa.
     Se asume que la ventana remota ya está en foco y en estado inicial.
     """
     print(f"\n➡️ Procesando placa: {placa}")
-
-    # 1) Enter para cargar datos
-    pag.press("enter")
-    time.sleep(DELAY_MEDIO)
 
     # 2) Tecla D (botón 'Despacho')
     pag.press("d")
@@ -354,10 +474,31 @@ def flujo_despacho_para_placa(placa: str):
     # 8) A → A para cerrar ventanas
     pag.press("a")
     time.sleep(DELAY_MEDIO)
-    pag.press("c") # Cerrar para pruebas
+    pag.press("a") # c Cerrar para pruebas
+    time.sleep(DELAY_LARGO)
+    send_keys("{SPACE}")
     time.sleep(DELAY_MEDIO)
 
+    # Esperar para que aparezca la pantalla "Información - \\Remota" → SPACE para continuar
+    wait_for_informacion_window(r"Información - \\Remota", timeout=100.0)
 
+    # Esperar que la ventana Registro de Salidas por Venta - \\Remota se cierre (win32 only)
+    """ wait_for_registro_salidas_close(r"Registro de Salidas por Venta - \\Remota", timeout=DEFAULT_REGISTRO_TIMEOUT) """
+    
+    # Intentar conectar y enfocar SDC automáticamente
+    """ try:
+        app, win = conectar_sdc()
+    except Exception as e:
+        print(f"[ERROR] No pude conectar al SDC: {e}")
+        sys.exit(1)
+
+    if sdc_active(win):
+        print("[INFO] SDC es la ventana activa.") """
+
+    # 7) Pausa para selección manual del conductor → F8 para continuar
+    """ esperar_confirmacion_usuario(KEY_CONTINUAR) """
+
+# ============== FLUJO PRINCIPAL ==============
 def main():
     print("Cargando placas desde Excel...")
     try:
@@ -390,6 +531,10 @@ def main():
         
 
     # Itera placas
+    # 1) Enter para cargar datos
+    pag.press("enter")
+    time.sleep(DELAY_MEDIO)
+
     for placa in placas:
         flujo_despacho_para_placa(placa)
 

@@ -1,0 +1,14 @@
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: print_guias",
+      "type": "python",
+      "request": "launch",
+      "program": "C:/Users/ealpiste/Documents/Mis scripts/pedidos_distribucion.py",
+      "args": ["-W", "ignore"],
+      "justMyCode": true
+    }
+  ]
+}

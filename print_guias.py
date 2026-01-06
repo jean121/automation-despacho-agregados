@@ -28,11 +28,12 @@ import pyautogui, re
 from pywinauto import Application, Desktop
 from pywinauto.keyboard import send_keys
 
-# ============== CONFIGURACIÓN ==============
+# ============== CONFIGURACIÓN ===
+# ===========
 GUIA_PREFIJO_FIJO = "195"     # lo estableces manualmente en el campo 'Guía (prefijo)' antes de ejecutar
-GUIA_INICIO = 184564
+GUIA_INICIO = 184946
           # ej.: 184241 -> se convertirá en "0184241"
-GUIA_FIN    = 184568
+GUIA_FIN    = 184952
 
 
 # Tabs según tu mapeo (AJUSTADO A 15)
@@ -273,7 +274,7 @@ def print_3_copies(win):
                 except Exception:
                     continue
             if dlg_found:
-                print(f"[INFO] Apareció el diálogo de impresión tras reintentos")
+                print(f"[INFO] Apareció el diálogo de impresión")
                 dlg_ok = True
                 break
             time.sleep(0.2)
