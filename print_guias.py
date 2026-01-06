@@ -31,9 +31,9 @@ from pywinauto.keyboard import send_keys
 # ============== CONFIGURACIÓN ===
 # ===========
 GUIA_PREFIJO_FIJO = "195"     # lo estableces manualmente en el campo 'Guía (prefijo)' antes de ejecutar
-GUIA_INICIO = 184946
+GUIA_INICIO = 184960
           # ej.: 184241 -> se convertirá en "0184241"
-GUIA_FIN    = 184952
+GUIA_FIN    = 184961
 
 
 # Tabs según tu mapeo (AJUSTADO A 15)

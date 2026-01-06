@@ -65,9 +65,9 @@ except Exception:
 
 # ====== VARIABLES AJUSTABLES (CAMBIA AQUÍ) ======
 EXCEL_PATH = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Compartido Victor\DESPACHO DE AGREGADOS_YB 2025 2.3.xlsx"
-TABLE_NAME = "Tabla27178"            # Nombre de la tabla (variable)
-START_ROW_IN_TABLE = 38               # Fila inicial dentro de la tabla (sin contar cabecera)
-END_ROW_IN_TABLE = 40                 # Fila final dentro de la tabla (sin contar cabecera)
+TABLE_NAME = "Tabla27182"            # Nombre de la tabla (variable)
+START_ROW_IN_TABLE = 4               # Fila inicial dentro de la tabla (sin contar cabecera)
+END_ROW_IN_TABLE =   14                 # Fila final dentro de la tabla (sin contar cabecera)
 TARGET_COLUMN_INDEX1 = 7              # 7ma columna de la tabla (agregado-destino)
 TARGET_COLUMN_INDEX2 = 6              # 6ta columna de la tabla (cubicaje)
 
@@ -121,7 +121,13 @@ def type_text(text: str):
     if DRY_RUN:
         log(f"[DRY] type_text('{text}')")
         return
-    pyautogui.typewrite(text, interval=0.02)
+    try:
+        # pywinauto.send_keys suele funcionar mejor en sesiones remotas/Citrix.
+        # send_keys interpreta modificadores especiales, pero para números/puntos no hay problema.
+        send_keys(str(text), pause=0.02)
+    except Exception:
+        # Fallback a pyautogui si send_keys falla por alguna razón.
+        pyautogui.typewrite(str(text), interval=0.02)
 
 def focus_unicon_window():
     """Intenta enfocar la ventana de UNICON.
@@ -207,7 +213,8 @@ def leer_pedidos_desde_excel() -> List[Tuple[str, str, float]]:
     {'MEIGGS','OQUENDO','MATERIALES','COLLIQUE'}.
     """
     # Hoja del día y mes actual en formato dd.mm
-    sheet_name = datetime.now().strftime('%d.%m')
+    #sheet_name = datetime.now().strftime('%d.%m')
+    sheet_name = "07.01"  # funcionará siempre que la hoja con ese nombre exista exactamente
 
     if not os.path.exists(EXCEL_PATH):
         raise FileNotFoundError(f"No existe el archivo de Excel: {EXCEL_PATH}")
@@ -324,8 +331,7 @@ def leer_pedidos_desde_excel() -> List[Tuple[str, str, float]]:
 def procesar_pedido(index: int, agregado: str, planta: str, cubicaje: float) -> None:
     log(f"\n[INFO] Procesando pedido: {index} | Agregado='{agregado}' | Planta='{planta}' | Cubicaje={cubicaje}")
 
-    # 1) Enfocar UNICON
-    focus_unicon_window()
+    
 
     # 2) refrescar búsqueda (posicionamiento inicial)
     if DRY_RUN:
@@ -376,7 +382,11 @@ def procesar_pedido(index: int, agregado: str, planta: str, cubicaje: float) -> 
         time.sleep(DELAY_MED)
 
     # 7) Seleccionar el número por defecto y sobreescribir con cubicaje
-    hotkey('ctrl', 'shift', 'right')
+    # usar pywinauto.send_keys con modificadores: ^ = Ctrl, + = Shift, {RIGHT} = flecha derecha
+    if DRY_RUN:
+        log("[DRY] send_keys('^+{RIGHT}')")
+    else:
+        send_keys('^+{RIGHT}', pause=DELAY_SHORT)
     time.sleep(DELAY_SHORT)
     type_text(str(int(cubicaje) if cubicaje.is_integer() else cubicaje))
     time.sleep(DELAY_SHORT)
@@ -413,11 +423,11 @@ def procesar_pedido(index: int, agregado: str, planta: str, cubicaje: float) -> 
         send_keys('{SPACE}', pause=DELAY_MED)
     time.sleep(DELAY_MED)
 
-    # 9) 4 TAB para volver al punto inicial
+    # 9) 1? TAB para volver al punto inicial
     if DRY_RUN:
         log("[DRY] send_keys('{TAB}' * 4)")
     else:
-        send_keys('{TAB}' * 4, pause=DELAY_MED)
+        send_keys('{TAB}', pause=DELAY_MED)
     time.sleep(DELAY_MED)
 
     log(f"[OK] Pedido {index} procesado.")
@@ -428,6 +438,9 @@ def main():
     if not pedidos:
         log("[WARN] No se encontraron pedidos válidos en el rango especificado.")
         return
+    
+    # 1) Enfocar UNICON
+    focus_unicon_window()
 
     # Iterar por fila -> un pedido por fila
     for i, (agregado, planta, cubicaje) in enumerate(pedidos, start=1):
