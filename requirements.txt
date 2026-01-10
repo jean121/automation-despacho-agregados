@@ -1,0 +1,14 @@
+
+# Core
+openpyxl
+pywinauto
+pyautogui
+pillow
+opencv-python
+pytesseract
+pyscreeze
+pyperclip
+
+# Optional (según tu entorno)
+keyboard
+pygetwindow

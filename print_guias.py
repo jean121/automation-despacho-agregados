@@ -31,11 +31,9 @@ from pywinauto.keyboard import send_keys
 # ============== CONFIGURACIÓN ===
 # ===========
 GUIA_PREFIJO_FIJO = "195"     # lo estableces manualmente en el campo 'Guía (prefijo)' antes de ejecutar
-GUIA_INICIO = 184960
+GUIA_INICIO = 185232
           # ej.: 184241 -> se convertirá en "0184241"
-GUIA_FIN    = 184961
-
-
+GUIA_FIN    = 185234
 # Tabs según tu mapeo (AJUSTADO A 15)
 TABS_PREFIJO_A_7D = 15        # de 'Guía (prefijo)' -> 'Guía (7 dígitos)'
 
@@ -143,7 +141,8 @@ def ensure_sdc_and_send_keys_hard(win, keys: str, desc: str = ""):
 
 def tab_hard(win, n: int, desc: str = "Tabs"):
     for i in range(n):
-        ensure_sdc_and_send_keys_hard(win, "{TAB}", f"{desc} ({i+1}/{n})")
+        #ensure_sdc_and_send_keys_hard(win, "{TAB}", f"{desc} ({i+1}/{n})")
+        send_keys("{TAB}")
 
 # ============== Imagen: "Obtener PDF" ==============
 def save_debug_region(region):
@@ -223,7 +222,7 @@ def print_3_copies(win):
 
     # Abrir diálogo de imprimir con reintentos hasta aparecer (timeout total configurable)
     PRINT_DIALOG_MAX_WAIT = 15.0      # tiempo máximo total para reintentos (seg)
-    PRINT_DIALOG_TRY_INTERVAL = 0.5   # espera entre reintentos de enviar Ctrl+P (seg)
+    PRINT_DIALOG_TRY_INTERVAL = 0.4   # espera entre reintentos de enviar Ctrl+P (seg)
     INNER_CHECK_TIMEOUT = 2.5         # espera tras cada Ctrl+P para que aparezca el diálogo (seg)
 
     t0 = time.time()
@@ -290,8 +289,8 @@ def print_3_copies(win):
         return False
 
     # Navegar en el diálogo con TABs
+    time.sleep(0.12)
     for _ in range(4):
-        time.sleep(0.12)
         send_keys("{TAB}")
 
     # Escribir número de copias y confirmar

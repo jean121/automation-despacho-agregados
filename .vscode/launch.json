@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: print_guias",
+      "name": "Python: PEDIDOS DESPACHO",
       "type": "python",
       "request": "launch",
       "program": "C:/Users/ealpiste/Documents/Mis scripts/pedidos_distribucion.py",

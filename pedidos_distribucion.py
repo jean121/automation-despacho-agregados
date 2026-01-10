@@ -65,24 +65,24 @@ except Exception:
 
 # ====== VARIABLES AJUSTABLES (CAMBIA AQUÍ) ======
 EXCEL_PATH = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Compartido Victor\DESPACHO DE AGREGADOS_YB 2025 2.3.xlsx"
-TABLE_NAME = "Tabla27182"            # Nombre de la tabla (variable)
-START_ROW_IN_TABLE = 4               # Fila inicial dentro de la tabla (sin contar cabecera)
-END_ROW_IN_TABLE =   14                 # Fila final dentro de la tabla (sin contar cabecera)
+TABLE_NAME = "Tabla276"            # Nombre de la tabla (variable)
+START_ROW_IN_TABLE = 38               # Fila inicial dentro de la tabla (sin contar cabecera)
+END_ROW_IN_TABLE =   40                  # Fila final dentro de la tabla (sin contar cabecera)
 TARGET_COLUMN_INDEX1 = 7              # 7ma columna de la tabla (agregado-destino)
 TARGET_COLUMN_INDEX2 = 6              # 6ta columna de la tabla (cubicaje)
 
 # Ventana (solo informativo; si instalas pygetwindow, puedes usarlo para enfocar)
-WINDOW_TITLE_HINT = "UNICON - Módulo de PEDIDOS_DISTRIBUCION - AGREGADOS"
+WINDOW_TITLE_HINT = "UNICON - Módulo de PEDIDOS_y   bDISTRIBUCION - AGREGADOS"
 
 # Imagen del botón "Salidas" (captura desde tu pantalla)
 SALIDAS_IMG_PATH = "salidas.png"
 SALIDAS_IMG_CONFIDENCE = 0.85  # baja si la UI tiene leves cambios
 
 # Delays / comportamiento
-DELAY_SHORT = 0.10   # pequeño entre teclas
+DELAY_SHORT = 0.1   # pequeño entre teclas
 DELAY_MED = 0.25     # mediano entre pasos
 DELAY_LONG = 0.60    # largo cuando la UI cambia de grilla
-WAIT_AFTER_REFRESH = 1.20  # después de presionar 'b'
+WAIT_AFTER_REFRESH = 1.20  # después de presionar 'b'b
 
 DRY_RUN = False  # True para simular sin enviar teclas
 
@@ -213,8 +213,8 @@ def leer_pedidos_desde_excel() -> List[Tuple[str, str, float]]:
     {'MEIGGS','OQUENDO','MATERIALES','COLLIQUE'}.
     """
     # Hoja del día y mes actual en formato dd.mm
-    #sheet_name = datetime.now().strftime('%d.%m')
-    sheet_name = "07.01"  # funcionará siempre que la hoja con ese nombre exista exactamente
+    sheet_name = datetime.now().strftime('%d.%m')
+    #sheet_name = "07.01"  # funcionará siempre que la hoja con ese nombre exista exactamente
 
     if not os.path.exists(EXCEL_PATH):
         raise FileNotFoundError(f"No existe el archivo de Excel: {EXCEL_PATH}")
@@ -329,15 +329,10 @@ def leer_pedidos_desde_excel() -> List[Tuple[str, str, float]]:
 # Flujo principal de envío a UNICON
 # ======================================================================
 def procesar_pedido(index: int, agregado: str, planta: str, cubicaje: float) -> None:
-    log(f"\n[INFO] Procesando pedido: {index} | Agregado='{agregado}' | Planta='{planta}' | Cubicaje={cubicaje}")
-
-    
+    log(f"\n[INFO] Procesando pedido: {index} | Agregado='{agregado}' | Planta='{planta}' | Cubicaje={cubicaje}")  
 
     # 2) refrescar búsqueda (posicionamiento inicial)
-    if DRY_RUN:
-        log("[DRY] send_keys('b')")
-    else:
-        send_keys('b', pause=DELAY_SHORT)
+    send_keys('b', pause=DELAY_SHORT)
     time.sleep(WAIT_AFTER_REFRESH)
 
     # 3) 2 TABs para ir a primera fila de la grilla superior (selección de planta)

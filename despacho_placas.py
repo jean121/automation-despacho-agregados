@@ -23,9 +23,9 @@ import os
 
 # ====== VARIABLES AJUSTABLES (CAMBIA AQUÍ) ======
 EXCEL_PATH = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Compartido Victor\DESPACHO DE AGREGADOS_YB 2025 2.3.xlsx"  # Cambia a tu ruta real
-TABLE_NAME = "Tabla27178"            # Nombre de la tabla (variable)
-START_ROW_IN_TABLE = 77             # Fila inicial dentro de la tabla (sin contar cabecera)
-END_ROW_IN_TABLE =   78                # Fila final dentro de la tabla (sin contar cabecera)
+TABLE_NAME = "Tabla276"            # Nombre de la tabla (variable)
+START_ROW_IN_TABLE = 38             # Fila inicial dentro de la tabla (sin contar cabecera)
+END_ROW_IN_TABLE =   40                # Fila final dentro de la tabla (sin contar cabecera)
 TARGET_COLUMN_INDEX = 3              # 3ª columna de la tabla (1 = primera, 2 = segunda, 3 = tercera)
 
 # Ventana remota (referencial, no usada por pyautogui directamente; sirve como documentación)
@@ -433,7 +433,7 @@ def flujo_despacho_para_placa(placa: str):
     # 3) 8× Shift+Tab → Espacio → 'alp' → Tab → Espacio → 'A'
     for _ in range(SHIFT_TABS_A_BOTON_NOMBRE):
         send_keys('+{TAB}')
-        time.sleep(DELAY_CORTO)
+    time.sleep(DELAY_CORTO)
 
     send_keys("{SPACE}")  # abre selector de nombre
     time.sleep(DELAY_MEDIO)
@@ -467,6 +467,10 @@ def flujo_despacho_para_placa(placa: str):
     time.sleep(DELAY_CORTO)
     send_keys("{SPACE}")
     time.sleep(DELAY_MEDIO)
+
+    # 6.1) Shift+Tab)x2
+    send_keys('+{TAB}')
+    send_keys('+{TAB}')
 
     # 7) Pausa para selección manual del conductor → F8 para continuar
     esperar_confirmacion_usuario(KEY_CONTINUAR)
