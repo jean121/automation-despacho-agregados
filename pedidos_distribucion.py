@@ -66,8 +66,8 @@ except Exception:
 # ====== VARIABLES AJUSTABLES (CAMBIA AQUÍ) ======
 EXCEL_PATH = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Compartido Victor\DESPACHO DE AGREGADOS_YB 2025 2.3.xlsx"
 TABLE_NAME = "Tabla276"            # Nombre de la tabla (variable)
-START_ROW_IN_TABLE = 38               # Fila inicial dentro de la tabla (sin contar cabecera)
-END_ROW_IN_TABLE =   40                  # Fila final dentro de la tabla (sin contar cabecera)
+START_ROW_IN_TABLE = 53               # Fila inicial dentro de la tabla (sin contar cabecera)
+END_ROW_IN_TABLE =   62                  # Fila final dentro de la tabla (sin contar cabecera)
 TARGET_COLUMN_INDEX1 = 7              # 7ma columna de la tabla (agregado-destino)
 TARGET_COLUMN_INDEX2 = 6              # 6ta columna de la tabla (cubicaje)
 

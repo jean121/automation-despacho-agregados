@@ -31,14 +31,14 @@ from pywinauto.keyboard import send_keys
 # ============== CONFIGURACIÓN ===
 # ===========
 GUIA_PREFIJO_FIJO = "195"     # lo estableces manualmente en el campo 'Guía (prefijo)' antes de ejecutar
-GUIA_INICIO = 185232
+GUIA_INICIO = 185267
           # ej.: 184241 -> se convertirá en "0184241"
-GUIA_FIN    = 185234
+GUIA_FIN    = 185276
 # Tabs según tu mapeo (AJUSTADO A 15)
 TABS_PREFIJO_A_7D = 15        # de 'Guía (prefijo)' -> 'Guía (7 dígitos)'
 
 # Imagen del link "Obtener PDF" (captura nítida SOLO del texto)
-IM_OBTENER_PDF = r"C:\Users\ealpiste\Documents\Mis scripts\imgs\obtener_pdf.png"
+IM_OBTENER_PDF = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Documentos\Mis scripts\imgs\obtener_pdf.png"
 
 # Parámetros de búsqueda por imagen
 CONFIDENCE_START = 0.94       # empezamos alto

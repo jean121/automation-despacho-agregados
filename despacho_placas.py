@@ -24,8 +24,8 @@ import os
 # ====== VARIABLES AJUSTABLES (CAMBIA AQUÍ) ======
 EXCEL_PATH = r"C:\Users\ealpiste\OneDrive - Unacem.corp\Compartido Victor\DESPACHO DE AGREGADOS_YB 2025 2.3.xlsx"  # Cambia a tu ruta real
 TABLE_NAME = "Tabla276"            # Nombre de la tabla (variable)
-START_ROW_IN_TABLE = 38             # Fila inicial dentro de la tabla (sin contar cabecera)
-END_ROW_IN_TABLE =   40                # Fila final dentro de la tabla (sin contar cabecera)
+START_ROW_IN_TABLE = 53             # Fila inicial dentro de la tabla (sin contar cabecera)
+END_ROW_IN_TABLE =   52                # Fila final dentro de la tabla (sin contar cabecera)
 TARGET_COLUMN_INDEX = 3              # 3ª columna de la tabla (1 = primera, 2 = segunda, 3 = tercera)
 
 # Ventana remota (referencial, no usada por pyautogui directamente; sirve como documentación)
